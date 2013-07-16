@@ -1,9 +1,11 @@
-utomatically grade files for the presence of specified HTML tags/attributes.
+#!/usr/bin/env node
+
+/*
+Automatically grade files for the presence of specified HTML tags/attributes.
 Uses commander.js and cheerio. Teaches command line application development
 and basic DOM parsing.
 
 References:
-
  + cheerio
    - https://github.com/MatthewMueller/cheerio
    - http://encosia.com/cheerio-faster-windows-friendly-alternative-jsdom/
@@ -19,11 +21,22 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
 
+var sys = require('util'),
+    rest = require('./restler');
+
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
+var URL_DEFAULT = "http://";
 var CHECKSFILE_DEFAULT = "checks.json";
+
+var assertURLExists = function(inurl){
+                var url = program.url.toString();
+                rest.get(url).on('complete',function(result,response){
+                        console.log(result);
+                });
+        }
 
 var assertFileExists = function(infile) {
     var instr = infile.toString();
@@ -62,8 +75,15 @@ var clone = function(fn) {
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-        .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .parse(process.argv);
+        .option('-f, --file [html_file]', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-url, --url [URL]', 'Path to URL', clone(assertURLExists), URL_DEFAULT)
+	.parse(process.argv);
+	if(program.url){
+		var url = program.url.toString();
+		rest.get(url).on('complete',function(result,response){
+			console.log(result);
+		});
+	}
     var checkJson = checkHtmlFile(program.file, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
